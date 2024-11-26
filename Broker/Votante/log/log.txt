@@ -1,3 +1,6 @@
-25/11/2024 22:26:17 - Seguidor registrado: 29666139-432b-4d1d-8088-cbef4fc0327e
-25/11/2024 22:26:27 - Seguidor registrado: 0d4d2cd8-d3a6-43aa-8a18-2c7d273eb42f
-25/11/2024 22:27:36 - Seguidor registrado: c9e3e47f-6061-49a8-8ed1-fdb0a44aa061
+26/11/2024 16:08:59 - Notificação: Publicação recebida
+26/11/2024 16:08:59 - Publicação replicada: Publicação: teste 1
+26/11/2024 16:09:11 - Notificação: Publicação recebida
+26/11/2024 16:09:11 - Publicação replicada: Publicação: teste 2
+26/11/2024 16:09:47 - Notificação: Publicação recebida
+26/11/2024 16:09:47 - Publicação replicada: Publicação: teste 3
