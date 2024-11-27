@@ -12,8 +12,14 @@ class Consumidor:
             
             # Cria o proxy no momento da publicação
             with Proxy(uri_objetoPyro) as lider:
-                mensagem = input("Digite a mensagem a ser consumida: ")
-                lider.publicar(mensagem)
-                print("Publicação realizada com sucesso.")
+                publicacoes = lider.consome_publicacao()
+                print(publicacoes)
+                print("Consumo de publicao realizada com sucesso.")
         except Exception as e:
-            print(f"Erro ao tentar publicar: {e}")
+            print(f"Erro ao tentar consumir: {e}")
+
+if __name__ == "__main__":
+    consumidor = Consumidor()
+    while True:
+        input("Pressione Enter para consumir uma publicação")
+        consumidor.consumir()

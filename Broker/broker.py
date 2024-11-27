@@ -73,7 +73,6 @@ class Broker:
     @expose 
     def replica_publicacoes(self, offset , epoca):
         publicacoes = self.log.consultar_publicacoes(epoca, offset)
-        print(epoca)
         if(epoca != self.epoca):
             return True, [], self.epoca , self.log.consultar_offset(epoca)
         return False, publicacoes, self.epoca, self.log.consultar_offset(epoca)
@@ -81,7 +80,7 @@ class Broker:
     @expose 
     def confirmar_recebimento(self, epoca, offset):
         # Incrementa a quantidade de recebimento de publicações
-        
+        print("Confirmado recebimento")
         # Garante que a coluna da época exista no DataFrame
         if epoca not in self.qtd_confirmados.columns:
             self.qtd_confirmados[epoca] = pd.Series(dtype='int')
@@ -99,6 +98,7 @@ class Broker:
         
         # Verifica se alcançou a maioria simples
         maioria_simples = int(self.num_seguidores / 2 + 1) 
+
         if self.qtd_confirmados.at[offset, epoca] >= maioria_simples:
             self.log.confirmar_publicacao(epoca, offset)
     @expose
@@ -154,8 +154,6 @@ class Broker:
     def avisa_publicacao(self):
         with Proxy(self.lider_uri) as lider_proxy:
             erro , publicoes_faltantes, epoca, offset  = lider_proxy.replica_publicacoes(self.log.consultar_offset(self.epoca) , self.epoca)
-            print("Publicação recebida por ", self.id)
-            print(erro)
             if erro == True: 
                 self.corrige_publicacoes(epoca, offset, lider_proxy)
             if erro == False:
@@ -186,6 +184,7 @@ class Broker:
         if erro == False:
             for publicacao in publicoes_faltantes:
                 self.log.inserir_log(publicacao, epoca)
+                lider_proxy.confirmar_recebimento(self.epoca, offset)
         else:
             self.corrige_publicacoes(epoca, offset, lider_proxy)
         return 
@@ -265,7 +264,6 @@ class Log:
                 pd.DataFrame({epoca: [0]})], 
                 ignore_index=True
             )
-    
         # Atualiza o valor para 1 na célula correspondente à época e ao offset
         self.matriz_publicacoes_confirmadas.at[offset, epoca] = 1
 
@@ -279,8 +277,6 @@ class Log:
             return []
         # Lista para armazenar as publicações confirmadas
         publicacoes = []
-        print(self.matriz_publicacoes_confirmadas)
-        print(self.matriz_publicacoes[epoca])
         for i, publicacao in self.matriz_publicacoes[epoca].items():  
             if self.matriz_publicacoes_confirmadas.at[i + 1 , epoca] == 1:
                 publicacoes.append(publicacao)
