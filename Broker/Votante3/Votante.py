@@ -20,7 +20,6 @@ class Broker:
         self.epoca = epoca
         self.lider_uri = None
         self.qtd_confirmados = pd.DataFrame()
-        self.num_seguidores = 0
         self.seguidores = []
         self.observadores = []
         self.log = Log()
@@ -45,7 +44,6 @@ class Broker:
         print("Registrando um " + estado)
         if estado == "Seguidor":
             self.seguidores.append({"uri": uri_objetoPyro , "id": id})
-            self.num_seguidores += 1
         elif estado == "Observador":
             self.observadores.append({"uri": uri_objetoPyro , "id": id})
         return self.epoca
@@ -60,13 +58,6 @@ class Broker:
         for seguidor in self.seguidores:
             with Proxy(seguidor["uri"]) as seguidor_proxy:
                 seguidor_proxy.avisa_publicacao()
-                print(self.log.consulta_publicacao_confirmada(self.epoca, self.log.consultar_offset(self.epoca)))
-                print("Publicação realizada com sucesso.")
-                
-                
-               
-        
-        
 
     @expose 
     def replica_publicacoes(self, offset , epoca):
@@ -76,46 +67,27 @@ class Broker:
         return False, publicacoes, self.epoca, self.log.consultar_offset(epoca)
     
     @expose 
-    def confirmar_recebimento(self, epoca, offset):
-        # Incrementa a quantidade de recebimento de publicações
-        
-        # Garante que a coluna da época exista no DataFrame
-        if epoca not in self.qtd_confirmados.columns:
-            self.qtd_confirmados[epoca] = pd.Series(dtype='int')
-
-        # Garante que o offset exista no índice do DataFrame
-        if offset >= len(self.qtd_confirmados[epoca]):
-            for _ in range(len(self.qtd_confirmados[epoca]), offset + 1):
-                self.qtd_confirmados = pd.concat(
-                    [self.qtd_confirmados, pd.DataFrame({epoca: [0]})],
-                    ignore_index=True
-                )
-
-        # Incrementa o contador de confirmações para a publicação específica
-        self.qtd_confirmados.at[offset, epoca] += 1
-        
-        # Verifica se alcançou a maioria simples
-        maioria_simples = int(self.num_seguidores / 2 + 1) 
-        if self.qtd_confirmados.at[offset, epoca] >= maioria_simples:
-            print("Confirmou a publicação")
-            self.log.confirmar_publicacao(epoca, offset)
+    def confirmar_recebimento(self, epoca , offset_antigo):
+        # incrementa no array de votos a quantidade de votos recebidos de acordo com a epoca e o offset antigo
+        # incrementa até o offset atual
+        for i in range(offset_antigo + 1, self.log.consultar_offset(epoca)):
+            self.qtd_confirmados[epoca][offset_antigo + i] += 1
     
      ## Votante ##
     @expose
     @oneway
     def avisa_publicacao(self):
         with Proxy(self.lider_uri) as lider_proxy:
+            offset_antigo = self.log.consultar_offset(self.epoca)
             erro , publicoes_faltantes, epoca, offset  = lider_proxy.replica_publicacoes(self.log.consultar_offset(self.epoca) , self.epoca)
             if erro == True: 
                 self.corrige_publicacoes(epoca, offset, lider_proxy)
             if erro == False:
                 for publicacao in publicoes_faltantes:
                     self.log.inserir_log(publicacao, epoca)
-                    lider_proxy.confirmar_recebimento(self.epoca, offset)
+                    lider_proxy.confirmar_recebimento(self.epoca, offset_antigo)
             print("Notificação: Publicação recebida")
-            print (self.epoca, self.log.consultar_offset(self.epoca))
-            return {"epoca": self.epoca,"offset": self.log.consultar_offset(self.epoca)} 
-              
+            
             
         
 
@@ -150,9 +122,6 @@ class Log:
         self.caminho_log = diretorio_base / "log" / "log.txt"
         self.caminho_log.write_text("")  # Limpa o arquivo de log ao iniciar
         self.matriz_publicacoes = pd.DataFrame()  # Inicializa o DataFrame vazio
-        # uma matriz que servirá para indicar se um publicao foi confirmado ou não
-        self.matriz_publicacoes_confirmadas = pd.DataFrame()  # Inicializa o DataFrame vazio
-
     
     def inserir_log(self, publicacao, epoca):
         # Verifica se a coluna para a época existe, se não, cria uma coluna vazia
@@ -175,31 +144,8 @@ class Log:
 
     def consultar_publicacoes(self, epoca, offset):
         if epoca not in self.matriz_publicacoes.columns:
-            return []  # Retorna uma lista vazia se a coluna não existires
+            return []  # Retorna uma lista vazia se a coluna não existir
         return self.matriz_publicacoes[epoca].dropna().iloc[offset:].tolist()
-    
-    def confirmar_publicacao(self, epoca, offset):
-        # Garante que a coluna correspondente à época exista na matriz de publicações confirmadas
-        if epoca not in self.matriz_publicacoes_confirmadas.columns:
-            self.matriz_publicacoes_confirmadas[epoca] = pd.Series(dtype='int')
-        
-        # Garante que o índice (offset) exista no DataFrame
-        while offset >= len(self.matriz_publicacoes_confirmadas):
-            self.matriz_publicacoes_confirmadas = pd.concat(
-                [self.matriz_publicacoes_confirmadas, 
-                pd.DataFrame({epoca: [0]})], 
-                ignore_index=True
-            )
-    
-        # Atualiza o valor para 1 na célula correspondente à época e ao offset
-        self.matriz_publicacoes_confirmadas.at[offset, epoca] = 1
-
-    def consulta_publicacao_confirmada(self, epoca, offset):
-        print ("Estou aq")
-        
-        if epoca not in self.matriz_publicacoes_confirmadas.columns:
-            return 0
-        return self.matriz_publicacoes_confirmadas[offset, epoca]
 
 
 

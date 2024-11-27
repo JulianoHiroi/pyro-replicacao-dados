@@ -1,6 +1,1 @@
-26/11/2024 16:08:59 - Notificação: Publicação recebida
-26/11/2024 16:08:59 - Publicação replicada: Publicação: teste 1
-26/11/2024 16:09:11 - Notificação: Publicação recebida
-26/11/2024 16:09:11 - Publicação replicada: Publicação: teste 2
-26/11/2024 16:09:47 - Notificação: Publicação recebida
-26/11/2024 16:09:47 - Publicação replicada: Publicação: teste 3
+Lider-Epoca-1 - 27/11/2024 06:15:50 - publicação: teste

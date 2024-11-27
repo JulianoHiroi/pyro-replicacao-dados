@@ -1,10 +1,10 @@
 from Pyro5.api import locate_ns, Proxy
 
-class Publicador:
+class Consumidor:
     def __init__(self):
         self.servidor_nomes = locate_ns()
     
-    def publicar(self):
+    def consumir(self):
         try:
             # Obtém o URI do objeto remoto
             uri_objetoPyro = self.servidor_nomes.lookup("Lider-Epoca-1")
@@ -12,13 +12,8 @@ class Publicador:
             
             # Cria o proxy no momento da publicação
             with Proxy(uri_objetoPyro) as lider:
-                mensagem = input("Digite a mensagem a ser publicada: ")
+                mensagem = input("Digite a mensagem a ser consumida: ")
                 lider.publicar(mensagem)
                 print("Publicação realizada com sucesso.")
         except Exception as e:
             print(f"Erro ao tentar publicar: {e}")
-
-if __name__ == "__main__":
-    publicador = Publicador()
-    while True:
-        publicador.publicar()

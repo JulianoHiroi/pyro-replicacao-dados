@@ -1,0 +1,1 @@
+Comando para iniciar servidor de nome Pyro: python -m Pyro5.nameserver
