@@ -101,6 +101,14 @@ class Broker:
 
         if self.qtd_confirmados.at[offset, epoca] >= maioria_simples:
             self.log.confirmar_publicacao(epoca, offset)
+            self.comita_publicacao(epoca, offset)
+        return
+    
+    def comita_publicacao(self, epoca, offset):
+        for seguidor in self.seguidores:
+            with Proxy(seguidor["uri"]) as seguidor_proxy:
+                seguidor_proxy.recebe_commit(epoca, offset)
+        return
     @expose
     def consome_publicacao(self):
         publicacoes = self.log.consultar_publicacoes_confirmadas(self.epoca)
@@ -196,6 +204,10 @@ class Broker:
                     lider_proxy.avisa_keep_alive(self.id)
                 time.sleep(5)
         Thread(target=keep_alive).start()
+    @expose
+    def receber_commit(self, epoca, offset):
+        self.log.confirmar_publicacao(epoca, offset)
+        return
                 
     ## Observador ##
     @expose
