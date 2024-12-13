@@ -13,10 +13,14 @@ class Publicador:
             # Cria o proxy no momento da publicação
             with Proxy(uri_objetoPyro) as lider:
                 mensagem = input("Digite a mensagem a ser publicada: ")
-                lider.publicar(mensagem)
-                print("Publicação realizada com sucesso.")
+                valido = lider.publicar(mensagem)
+                if(valido):
+                    print("Publicação realizada com sucesso.")
+                else:
+                    print("Publicação não realizada.")
         except Exception as e:
             print(f"Erro ao tentar publicar: {e}")
+
 
 if __name__ == "__main__":
     publicador = Publicador()

@@ -1,5 +1,6 @@
 from datetime import datetime
 import time
+import schedule
 from Pyro5.api import *
 import Pyro5.api
 from threading import Thread
@@ -67,8 +68,13 @@ class Broker:
         for seguidor in self.seguidores:
             with Proxy(seguidor["uri"]) as seguidor_proxy:
                 seguidor_proxy.avisa_publicacao()
-        print("Publicação realizada com sucesso.")
-        return         
+        # faça uma   função que espere a publicação ser commitada pelos votantes
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+            if self.qtd_confirmados.at[len(self.qtd_confirmados) - 1, self.epoca] >= int(self.num_seguidores / 2 + 1):
+                break
+        return True
 
     @expose 
     def replica_publicacoes(self, offset , epoca):
@@ -107,7 +113,7 @@ class Broker:
     def comita_publicacao(self, epoca, offset):
         for seguidor in self.seguidores:
             with Proxy(seguidor["uri"]) as seguidor_proxy:
-                seguidor_proxy.recebe_commit(epoca, offset)
+                seguidor_proxy.receber_commit(epoca, offset)
         return
     @expose
     def consome_publicacao(self):
@@ -158,7 +164,6 @@ class Broker:
 
      ## Votante ##
     @expose
-    @oneway
     def avisa_publicacao(self):
         with Proxy(self.lider_uri) as lider_proxy:
             erro , publicoes_faltantes, epoca, offset  = lider_proxy.replica_publicacoes(self.log.consultar_offset(self.epoca) , self.epoca)
@@ -209,6 +214,8 @@ class Broker:
         self.log.confirmar_publicacao(epoca, offset)
         return
                 
+
+    
     ## Observador ##
     @expose
     def virar_seguidor(self, epoca, uri_objetoPyro):
